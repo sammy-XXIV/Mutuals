@@ -272,7 +272,7 @@
   }
 
   async function apiGet(path, params) {
-    var url = WORKER_URL + path;
+    var url = BACKEND_URL + path;
     if (params) {
       var qs = Object.keys(params).map(function(k) {
         return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
@@ -562,4 +562,3 @@
 </script>
 </body>
 </html>
-
