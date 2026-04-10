@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIBE — Your Top Mutuals</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0A0A0F;
+    --coral: #FF4D6D;
+    --gold: #FFD166;
+    --teal: #06D6A0;
+    --purple: #9B5DE5;
+    --glass: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.1);
+    --text: #F0EDE8;
+    --muted: rgba(240,237,232,0.45);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,77,109,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,77,109,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .glow { position:fixed; border-radius:50%; pointer-events:none; z-index:0; filter:blur(100px); }
+  .glow1 { width:600px;height:600px;top:-200px;left:-200px; background:radial-gradient(circle,rgba(255,77,109,0.12),transparent 70%); animation:g1 16s ease-in-out infinite; }
+  .glow2 { width:500px;height:500px;bottom:-150px;right:-150px; background:radial-gradient(circle,rgba(9,211,160,0.1),transparent 70%); animation:g2 20s ease-in-out infinite; }
+  .glow3 { width:400px;height:400px;top:50%;left:50%;transform:translate(-50%,-50%); background:radial-gradient(circle,rgba(155,93,229,0.08),transparent 70%); animation:g3 24s ease-in-out infinite; }
+  @keyframes g1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(60px,40px)} }
+  @keyframes g2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-40px,-60px)} }
+  @keyframes g3 { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.2)} }
+
+  .wrapper { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:40px 20px 80px; }
+
+  /* Header */
+  .header { text-align:center; margin-bottom:40px; animation:fadeDown 0.6s ease both; }
+  .logo {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:80px; letter-spacing:10px; line-height:1;
+    background: linear-gradient(135deg, var(--coral) 0%, var(--gold) 50%, var(--teal) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .tagline { font-size:12px; letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin-top:6px; }
+  .sub { font-size:13px; color:var(--muted); margin-top:8px; }
+  .made-by { margin-top:8px; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,209,102,0.5); }
+  .made-by span { font-family:'Bebas Neue',sans-serif; font-size:14px; color:var(--gold); letter-spacing:3px; }
+
+  /* Search box */
+  .search-box {
+    background:var(--glass); border:1px solid var(--border);
+    backdrop-filter:blur(24px); border-radius:24px; padding:28px;
+    margin-bottom:24px; animation:fadeUp 0.5s ease 0.1s both;
+  }
+  .input-row { display:flex; gap:12px; }
+  .at { background:rgba(255,255,255,0.06); border:1px solid var(--border); border-right:none;
+    border-radius:16px 0 0 16px; padding:14px 12px 14px 18px;
+    font-size:18px; color:var(--muted); display:flex; align-items:center; }
+  .username-input {
+    flex:1; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-left:none;
+    border-radius:0 16px 16px 0; padding:14px 18px; color:var(--text);
+    font-family:'DM Sans',sans-serif; font-size:15px; outline:none;
+    transition:border-color 0.2s, background 0.2s;
+  }
+  .username-input:focus { border-color:var(--coral); background:rgba(255,255,255,0.09); }
+  .username-input::placeholder { color:var(--muted); }
+  .btn-go {
+    background:linear-gradient(135deg,var(--coral),#ff8e53);
+    border:none; border-radius:16px; padding:14px 28px;
+    color:white; font-family:'Bebas Neue',sans-serif; font-size:20px;
+    letter-spacing:2px; cursor:pointer; transition:transform 0.15s, opacity 0.15s;
+  }
+  .btn-go:hover { transform:translateY(-2px); opacity:0.9; }
+  .btn-go:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .info-row { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .info-chip {
+    background:rgba(255,255,255,0.05); border:1px solid var(--border);
+    border-radius:10px; padding:5px 12px; font-size:11px; color:var(--muted);
+    letter-spacing:0.5px;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    background:var(--glass); border:1px solid var(--border);
+    backdrop-filter:blur(20px); border-radius:20px; padding:24px;
+    margin-bottom:24px; display:none;
+  }
+  .progress-wrap.active { display:block; }
+  .progress-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; color:var(--gold); margin-bottom:16px; }
+  .progress-bar-wrap { background:rgba(255,255,255,0.08); border-radius:10px; height:8px; overflow:hidden; margin-bottom:12px; }
+  .progress-bar { height:100%; border-radius:10px; background:linear-gradient(90deg,var(--coral),var(--gold),var(--teal)); transition:width 0.4s ease; width:0%; }
+  .progress-steps { display:flex; flex-direction:column; gap:6px; }
+  .step {
+    display:flex; align-items:center; gap:10px;
+    font-size:12px; color:var(--muted); transition:color 0.3s;
+  }
+  .step.active { color:var(--gold); }
+  .step.done { color:var(--teal); }
+  .step-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.2); flex-shrink:0; transition:background 0.3s; }
+  .step.active .step-dot { background:var(--gold); animation:pulse 1s ease-in-out infinite; }
+  .step.done .step-dot { background:var(--teal); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Status */
+  .status { text-align:center; font-size:13px; color:var(--muted); margin-bottom:16px; min-height:18px; }
+  .status.error { color:var(--coral); }
+  .status.success { color:var(--teal); }
+
+  /* Result section */
+  .result-section { display:none; animation:fadeUp 0.5s ease both; }
+  .result-section.active { display:block; }
+
+  .result-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:20px; flex-wrap:wrap; gap:12px;
+  }
+  .result-title { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:3px; }
+  .result-title span { color:var(--coral); }
+
+  .btn-download {
+    background:linear-gradient(135deg,var(--teal),#00B4D8);
+    border:none; border-radius:14px; padding:12px 24px;
+    color:#0A0A0F; font-family:'Bebas Neue',sans-serif; font-size:18px;
+    letter-spacing:2px; cursor:pointer; transition:transform 0.15s, opacity 0.15s;
+    display:flex; align-items:center; gap:8px; font-weight:700;
+  }
+  .btn-download:hover { transform:translateY(-2px); opacity:0.9; }
+
+  /* Canvas container */
+  .canvas-wrap {
+    background:var(--glass); border:1px solid var(--border);
+    backdrop-filter:blur(20px); border-radius:24px; padding:20px;
+    overflow:hidden;
+  }
+  #tribeCanvas {
+    width:100%; height:auto; border-radius:16px;
+    display:block;
+    image-rendering: pixelated;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;
+  }
+  .stat-pill {
+    background:rgba(255,255,255,0.06); border:1px solid var(--border);
+    border-radius:12px; padding:8px 16px; font-size:12px; color:var(--muted);
+    display:flex; align-items:center; gap:6px;
+  }
+  .stat-pill strong { color:var(--text); font-size:14px; }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+
+  @media (max-width:600px) {
+    .logo { font-size:56px; }
+    .input-row { flex-direction:column; }
+    .at { border-radius:16px 16px 0 0; border-right:1px solid var(--border); border-bottom:none; }
+    .username-input { border-radius:0; border-left:1px solid var(--border); border-top:none; }
+    .btn-go { border-radius:0 0 16px 16px; width:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="glow glow1"></div>
+<div class="glow glow2"></div>
+<div class="glow glow3"></div>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="logo">TRIBE</div>
+    <div class="tagline">Your Top 200 Mutuals · Visualized</div>
+    <div class="made-by">Made by <span>SAMMY</span></div>
+  </div>
+
+  <div class="search-box">
+    <div class="input-row">
+      <div class="at">@</div>
+      <input class="username-input" id="usernameInput" type="text" placeholder="username" autocomplete="off" autocorrect="off" autocapitalize="off" />
+      <button class="btn-go" id="goBtn" onclick="buildTribe()">BUILD</button>
+    </div>
+
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-title">🔍 BUILDING YOUR TRIBE</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-steps">
+      <div class="step" id="step1"><div class="step-dot"></div><span>Fetching following list...</span></div>
+      <div class="step" id="step2"><div class="step-dot"></div><span>Fetching followers list...</span></div>
+      <div class="step" id="step3"><div class="step-dot"></div><span>Finding mutuals...</span></div>
+      <div class="step" id="step4"><div class="step-dot"></div><span>Ranking by engagement...</span></div>
+      <div class="step" id="step5"><div class="step-dot"></div><span>Loading profile pictures...</span></div>
+      <div class="step" id="step6"><div class="step-dot"></div><span>Generating image...</span></div>
+    </div>
+  </div>
+
+  <div class="result-section" id="resultSection">
+    <div class="result-header">
+      <div class="result-title">YOUR TRIBE — <span id="resultUsername">@user</span></div>
+      <button class="btn-download" id="downloadBtn" onclick="downloadImage()">⬇ DOWNLOAD</button>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="tribeCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+  const WORKER_URL = 'https://restless-bonus-b3a9.samsonsamuel531.workers.dev';
+  const COLS = 20, ROWS = 10, TOTAL = 200;
+  const CELL = 100; // px per cell on canvas
+  const CANVAS_W = COLS * CELL;
+  const CANVAS_H = ROWS * CELL + 60; // extra for watermark
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function setStatus(msg, type) {
+    var s = document.getElementById('status');
+    s.textContent = msg;
+    s.className = 'status ' + (type || '');
+  }
+
+  function setStep(n, state) {
+    // state: 'active' | 'done'
+    for (var i = 1; i <= 6; i++) {
+      var el = document.getElementById('step' + i);
+      if (i < n) el.className = 'step done';
+      else if (i === n) el.className = 'step ' + state;
+      else el.className = 'step';
+    }
+    document.getElementById('progressBar').style.width = Math.round((n / 6) * 100) + '%';
+  }
+
+  async function apiGet(path, params) {
+    var url = WORKER_URL + path;
+    if (params) {
+      var qs = Object.keys(params).map(function(k) {
+        return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+      }).join('&');
+      url += '?' + qs;
+    }
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('API error: HTTP ' + res.status);
+    return await res.json();
+  }
+
+  async function fetchAllFollowing(username) {
+    // Fetch up to 1000 following (5 pages of 200)
+    var all = [];
+    var cursor = null;
+    var pages = 0;
+    while (pages < 5) {
+      pages++;
+      var params = { userName: username, count: 200 };
+      if (cursor) params.cursor = cursor;
+      var data = await apiGet('/following', params);
+      await sleep(800);
+      var users = data.data || data.following || data.users || data.results || [];
+      all = all.concat(users);
+      cursor = data.next_cursor || data.cursor || null;
+      if (!cursor || users.length < 200) break;
+    }
+    return all;
+  }
+
+  async function fetchAllFollowers(username) {
+    // Fetch up to 1000 followers (5 pages of 200)
+    var all = [];
+    var cursor = null;
+    var pages = 0;
+    while (pages < 5) {
+      pages++;
+      var params = { userName: username, count: 200 };
+      if (cursor) params.cursor = cursor;
+      var data = await apiGet('/followers', params);
+      await sleep(800);
+      var users = data.data || data.followers || data.users || data.results || [];
+      all = all.concat(users);
+      cursor = data.next_cursor || data.cursor || null;
+      if (!cursor || users.length < 200) break;
+    }
+    return all;
+  }
+
+  function getMutuals(following, followers) {
+    // Build set of follower usernames
+    var followerSet = {};
+    followers.forEach(function(u) {
+      var handle = (u.userName || u.username || u.screen_name || '').toLowerCase();
+      if (handle) followerSet[handle] = u;
+    });
+    // Filter following to only mutuals
+    var mutuals = [];
+    following.forEach(function(u) {
+      var handle = (u.userName || u.username || u.screen_name || '').toLowerCase();
+      if (handle && followerSet[handle]) {
+        mutuals.push(u);
+      }
+    });
+    return mutuals;
+  }
+
+  function rankByEngagement(mutuals) {
+    // Score: followers count + verified bonus + recent activity
+    // Since we don't have direct engagement data, we rank by:
+    // followers count (influence), blue verified bonus, and media count (active poster)
+    mutuals.forEach(function(u) {
+      var followers = u.followers || u.followersCount || u.followers_count || 0;
+      var verified = (u.isBlueVerified || u.verified) ? 5000 : 0;
+      var media = u.mediaCount || u.statusesCount || u.statuses_count || 0;
+      u._score = followers * 0.3 + verified + media * 0.5;
+    });
+    mutuals.sort(function(a, b) { return b._score - a._score; });
+    return mutuals.slice(0, TOTAL);
+  }
+
+  function loadImage(src) {
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() { resolve(img); };
+      img.onerror = function() { resolve(null); };
+      // Use a CORS proxy for profile images
+      img.src = src;
+      setTimeout(function() { if (!img.complete) resolve(null); }, 4000);
+    });
+  }
+
+  function drawFallback(ctx, x, y, size, initials, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = 'bold ' + Math.floor(size * 0.35) + 'px "Bebas Neue", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(initials, x + size/2, y + size/2);
+  }
+
+  var GRADIENT_COLORS = [
+    ['#FF4D6D','#FFD166'], ['#06D6A0','#118AB2'], ['#FF4D6D','#9B5DE5'],
+    ['#FFD166','#FF4D6D'], ['#9B5DE5','#06D6A0'], ['#118AB2','#FFD166']
+  ];
+
+  function getColor(handle) {
+    var hash = 0;
+    for (var i = 0; i < handle.length; i++) hash += handle.charCodeAt(i);
+    var pair = GRADIENT_COLORS[hash % GRADIENT_COLORS.length];
+    return pair[hash % 2];
+  }
+
+  function getInitials(name) {
+    return (name || '?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+  }
+
+  async function buildTribe() {
+    var username = document.getElementById('usernameInput').value.trim().replace('@','');
+    if (!username) { setStatus('Enter a username first.', 'error'); return; }
+
+    var btn = document.getElementById('goBtn');
+    btn.disabled = true;
+    document.getElementById('resultSection').classList.remove('active');
+    document.getElementById('progressWrap').classList.add('active');
+    setStatus('');
+
+    try {
+      // Step 1: Fetch following
+      setStep(1, 'active');
+      var following = await fetchAllFollowing(username);
+      setStep(1, 'done');
+
+      if (following.length === 0) throw new Error('Could not fetch following list for @' + username);
+
+      // Step 2: Fetch followers
+      setStep(2, 'active');
+      var followers = await fetchAllFollowers(username);
+      setStep(2, 'done');
+
+      // Step 3: Find mutuals
+      setStep(3, 'active');
+      await sleep(300);
+      var mutuals = getMutuals(following, followers);
+      setStep(3, 'done');
+
+      if (mutuals.length === 0) throw new Error('No mutuals found for @' + username);
+
+      // Step 4: Rank by engagement
+      setStep(4, 'active');
+      await sleep(300);
+      var top200 = rankByEngagement(mutuals);
+      setStep(4, 'done');
+
+      // Step 5: Load profile pictures
+      setStep(5, 'active');
+      var images = [];
+      var loaded = 0;
+      for (var i = 0; i < top200.length; i++) {
+        var u = top200[i];
+        var pfp = u.profilePicture || u.profileImageUrl || u.profile_image_url_https || u.profile_image_url || '';
+        // Use higher res version
+        pfp = pfp.replace('_normal', '_400x400');
+        var img = pfp ? await loadImage(pfp) : null;
+        images.push({ user: u, img: img });
+        loaded++;
+        if (loaded % 10 === 0) {
+          document.getElementById('step5').querySelector('span').textContent =
+            'Loading profile pictures... (' + loaded + '/' + top200.length + ')';
+        }
+      }
+      setStep(5, 'done');
+
+      // Step 6: Draw canvas
+      setStep(6, 'active');
+      await sleep(200);
+
+      var canvas = document.getElementById('tribeCanvas');
+      canvas.width = CANVAS_W;
+      canvas.height = CANVAS_H;
+      var ctx = canvas.getContext('2d');
+
+      // Background
+      ctx.fillStyle = '#0A0A0F';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      // Draw grid
+      for (var idx = 0; idx < images.length && idx < TOTAL; idx++) {
+        var col = idx % COLS;
+        var row = Math.floor(idx / COLS);
+        var x = col * CELL;
+        var y = row * CELL;
+        var entry = images[idx];
+
+        if (entry.img) {
+          try {
+            ctx.drawImage(entry.img, x, y, CELL, CELL);
+          } catch(e) {
+            var handle = (entry.user.userName || entry.user.username || 'u').toLowerCase();
+            drawFallback(ctx, x, y, CELL, getInitials(entry.user.name || handle), getColor(handle));
+          }
+        } else {
+          var handle2 = (entry.user.userName || entry.user.username || 'u').toLowerCase();
+          drawFallback(ctx, x, y, CELL, getInitials(entry.user.name || handle2), getColor(handle2));
+        }
+
+        // Subtle border between cells
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, CELL, CELL);
+      }
+
+      // Fill empty slots if less than 200
+      for (var e = images.length; e < TOTAL; e++) {
+        var ec = e % COLS;
+        var er = Math.floor(e / COLS);
+        ctx.fillStyle = 'rgba(255,255,255,0.03)';
+        ctx.fillRect(ec * CELL, er * CELL, CELL, CELL);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(ec * CELL, er * CELL, CELL, CELL);
+      }
+
+      // Watermark bar at bottom
+      var barY = ROWS * CELL;
+      var grad = ctx.createLinearGradient(0, barY, CANVAS_W, barY);
+      grad.addColorStop(0, '#FF4D6D');
+      grad.addColorStop(0.5, '#FFD166');
+      grad.addColorStop(1, '#06D6A0');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, barY, CANVAS_W, 4);
+
+      ctx.fillStyle = '#0A0A0F';
+      ctx.fillRect(0, barY + 4, CANVAS_W, 56);
+
+      // Username on left
+      ctx.fillStyle = 'rgba(240,237,232,0.5)';
+      ctx.font = '500 22px "DM Sans", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('@' + username + "'s tribe", 20, barY + 32);
+
+      // MADE BY SAMMY watermark on right
+      ctx.fillStyle = 'rgba(255,209,102,0.5)';
+      ctx.font = '400 13px "DM Sans", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('made by', CANVAS_W - 100, barY + 32);
+
+      ctx.fillStyle = '#FFD166';
+      ctx.font = '700 22px "Bebas Neue", sans-serif';
+      ctx.letterSpacing = '3px';
+      ctx.fillText('SAMMY', CANVAS_W - 16, barY + 32);
+
+      setStep(6, 'done');
+
+      // Show result
+      document.getElementById('progressWrap').classList.remove('active');
+      document.getElementById('resultSection').classList.add('active');
+      document.getElementById('resultUsername').textContent = '@' + username;
+
+
+
+      setStatus('✓ Tribe generated for @' + username, 'success');
+
+    } catch(err) {
+      document.getElementById('progressWrap').classList.remove('active');
+      setStatus('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function downloadImage() {
+    var canvas = document.getElementById('tribeCanvas');
+    var username = document.getElementById('usernameInput').value.trim().replace('@','');
+    var link = document.createElement('a');
+    link.download = username + '-tribe-by-sammy.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  document.getElementById('usernameInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') buildTribe();
+  });
+</script>
+</body>
+</html>
+
