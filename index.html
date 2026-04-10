@@ -252,6 +252,25 @@
     document.getElementById('progressBar').style.width = Math.round((n / 6) * 100) + '%';
   }
 
+  // Retry fetch with backoff for cold starts
+  async function fetchWithRetry(url, retries) {
+    retries = retries || 3;
+    for (var i = 0; i < retries; i++) {
+      try {
+        var res = await fetchWithRetry(url);
+        if (res.ok) return res;
+        if (res.status === 429) { await sleep(3000); continue; }
+        if (i < retries - 1) { await sleep(2000 * (i + 1)); continue; }
+        return res;
+      } catch(e) {
+        if (i < retries - 1) {
+          document.getElementById('step1').querySelector('span').textContent = 'Server waking up... (' + (i+1) + '/3)';
+          await sleep(5000);
+        } else throw e;
+      }
+    }
+  }
+
   async function apiGet(path, params) {
     var url = WORKER_URL + path;
     if (params) {
@@ -260,45 +279,45 @@
       }).join('&');
       url += '?' + qs;
     }
-    var res = await fetch(url);
+    var res = await fetchWithRetry(url);
     if (!res.ok) throw new Error('API error: HTTP ' + res.status);
     return await res.json();
   }
 
   async function fetchAllFollowing(username) {
-    // Fetch up to 1000 following (5 pages of 200)
     var all = [];
     var cursor = null;
     var pages = 0;
     while (pages < 5) {
       pages++;
-      var params = { userName: username, count: 200 };
+      var params = { userName: username };
       if (cursor) params.cursor = cursor;
       var data = await apiGet('/following', params);
-      await sleep(800);
-      var users = data.data || data.following || data.users || data.results || [];
+      await sleep(1000);
+      var users = data.results || data.data || data.following || data.users || [];
       all = all.concat(users);
-      cursor = data.next_cursor || data.cursor || null;
-      if (!cursor || users.length < 200) break;
+      var hasMore = data.has_next_page || false;
+      cursor = data.next_cursor || null;
+      if (!hasMore || !cursor) break;
     }
     return all;
   }
 
   async function fetchAllFollowers(username) {
-    // Fetch up to 1000 followers (5 pages of 200)
     var all = [];
     var cursor = null;
     var pages = 0;
     while (pages < 5) {
       pages++;
-      var params = { userName: username, count: 200 };
+      var params = { userName: username };
       if (cursor) params.cursor = cursor;
       var data = await apiGet('/followers', params);
-      await sleep(800);
-      var users = data.data || data.followers || data.users || data.results || [];
+      await sleep(1000);
+      var users = data.results || data.data || data.followers || data.users || [];
       all = all.concat(users);
-      cursor = data.next_cursor || data.cursor || null;
-      if (!cursor || users.length < 200) break;
+      var hasMore = data.has_next_page || false;
+      cursor = data.next_cursor || null;
+      if (!hasMore || !cursor) break;
     }
     return all;
   }
@@ -543,3 +562,4 @@
 </script>
 </body>
 </html>
+
