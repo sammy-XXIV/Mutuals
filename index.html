@@ -195,7 +195,7 @@
     <div class="input-row">
       <div class="at">@</div>
       <input class="username-input" id="usernameInput" type="text" placeholder="username" autocomplete="off" autocorrect="off" autocapitalize="off" />
-      <button class="btn-go" id="goBtn" onclick="buildTribe()">BUILD</button>
+      <button class="btn-go" id="goBtn" onclick="buildTribe()">FETCH</button>
     </div>
 
   </div>
@@ -394,17 +394,54 @@
     setStatus('');
 
     try {
-      // Step 1: Fetch following
+      // Step 1 & 2: Join queue — server fetches following+followers together
       setStep(1, 'active');
-      var following = await fetchAllFollowing(username);
+      var qRes = await fetch(BACKEND_URL + '/tribe/queue', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: username})
+      });
+      if (!qRes.ok) throw new Error('Could not connect to server.');
+      var qData = await qRes.json();
+      var queueId = qData.queue_id;
+
+      if (qData.position > 1) {
+        document.getElementById('step1').querySelector('span').textContent =
+          '⏳ #' + qData.position + ' in queue — est. ' + qData.estimated_wait + 's wait';
+      }
+
+      var following = [];
+      var followers = [];
+      var attempts = 0;
+
+      while (attempts < 120) {
+        attempts++;
+        await sleep(3000);
+        var sRes = await fetch(BACKEND_URL + '/tribe/status/' + queueId);
+        if (!sRes.ok) throw new Error('Server error.');
+        var sData = await sRes.json();
+
+        if (sData.status === 'queued') {
+          document.getElementById('step1').querySelector('span').textContent =
+            sData.position > 1
+              ? '⏳ #' + sData.position + ' in queue — est. ' + sData.estimated_wait + 's'
+              : 'Almost your turn...';
+        } else if (sData.status === 'processing') {
+          document.getElementById('step1').querySelector('span').textContent = '🔍 Fetching following list...';
+          document.getElementById('step2').querySelector('span').textContent = '🔍 Fetching followers list...';
+        } else if (sData.status === 'error') {
+          throw new Error(sData.message || 'Something went wrong.');
+        } else if (sData.status === 'done') {
+          following = sData.followings || [];
+          followers = sData.followers || [];
+          break;
+        }
+      }
+
       setStep(1, 'done');
-
-      if (following.length === 0) throw new Error('No following data returned for @' + username + '. They may have a private account or the API key may be out of credits.');
-
-      // Step 2: Fetch followers
-      setStep(2, 'active');
-      var followers = await fetchAllFollowers(username);
       setStep(2, 'done');
+
+      if (following.length === 0) throw new Error('No following data for @' + username + '. Account may be private.');
 
       // Step 3: Find mutuals
       setStep(3, 'active');
@@ -559,4 +596,3 @@
 </script>
 </body>
 </html>
-
