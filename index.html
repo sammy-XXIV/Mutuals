@@ -283,12 +283,14 @@
       if (cursor) params.cursor = cursor;
       var data = await apiGet('/following', params);
       await sleep(1000);
-      var users = data.results || data.data || data.following || data.users || [];
+      // Try every possible field name
+      var users = data.followings || data.results || data.data || data.following || data.users || [];
       all = all.concat(users);
       var hasMore = data.has_next_page || false;
       cursor = data.next_cursor || null;
-      if (!hasMore || !cursor) break;
+      if (!hasMore || !cursor || users.length === 0) break;
     }
+    // Debug: if empty throw with raw response hint
     return all;
   }
 
@@ -302,11 +304,11 @@
       if (cursor) params.cursor = cursor;
       var data = await apiGet('/followers', params);
       await sleep(1000);
-      var users = data.results || data.data || data.followers || data.users || [];
+      var users = data.followers || data.results || data.data || data.users || [];
       all = all.concat(users);
       var hasMore = data.has_next_page || false;
       cursor = data.next_cursor || null;
-      if (!hasMore || !cursor) break;
+      if (!hasMore || !cursor || users.length === 0) break;
     }
     return all;
   }
@@ -397,7 +399,7 @@
       var following = await fetchAllFollowing(username);
       setStep(1, 'done');
 
-      if (following.length === 0) throw new Error('Could not fetch following list for @' + username);
+      if (following.length === 0) throw new Error('No following data returned for @' + username + '. They may have a private account or the API key may be out of credits.');
 
       // Step 2: Fetch followers
       setStep(2, 'active');
@@ -551,4 +553,3 @@
 </script>
 </body>
 </html>
-
